@@ -1,10 +1,23 @@
+@font-face {
+  font-family: 'press_start_29';
+  src: url('fonts/PressStart2P-Regular.ttf');
+}
+
 * {
   padding: 0;
   margin: 0;
 }
 
+body {
+  background: #8e5c2c;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 canvas {
-  background: #eee;
+  background: #000;
   display: block;
-  margin: 0 auto;
 }

@@ -1,29 +1,45 @@
 const canvas = document.getElementById('gameContainer')
 const ctx = canvas.getContext('2d')
 
+const retroColors = [
+  '#ff6969',
+  '#e8a650',
+  '#ffd369',
+  '#a5d296',
+  '#4cbbb9',
+  '#7aa5d2',
+  '#be86e3',
+  '#9c4f97',
+  '#ff8fb2',
+  '#5c5c5c'
+]
+
 let score = 0
 let lives = 3
+const textColor = '#eee'
+const initdx = 4
+const initdy = -4
 
 function drawScore() {
-  ctx.font = '16px Arial'
-  ctx.fillStyle = '#0095DD'
-  ctx.fillText(`Score: ${score}`, 8, 20)
+  ctx.font = '16px "press_start_29"'
+  ctx.fillStyle = textColor
+  ctx.fillText(`Score: ${score}`, 8, 25)
 }
 
 function drawLives() {
-  ctx.font = '16px Arial'
-  ctx.fillStyle = '#0095DD'
-  ctx.fillText('Lives: ' + lives, canvas.width - 65, 20)
+  ctx.font = '16px "press_start_29"'
+  ctx.fillStyle = textColor
+  ctx.fillText(`Lives: ${lives}`, canvas.width - 140, 25)
 }
 
 const ballRadius = 10
-const ballColor = '#0095DD'
+const ballColor = '#eee'
 let x = canvas.width / 2
 let y = canvas.height - 30
-let dx = 2
-let dy = -2
+let dx = initdx
+let dy = initdy
 
-const paddleHeight = 10
+const paddleHeight = 15
 const paddleWidth = 75
 const paddleColor = '#0095DD'
 let paddleX = (canvas.width - paddleWidth) / 2
@@ -62,26 +78,28 @@ function mouseMoveHandler(e) {
   }
 }
 
-const brickRowCount = 3
-const brickColumnCount = 5
-const brickWidth = 75
-const brickHeight = 20
-const brickPadding = 10
+const brickRowCount = 8
+const brickColumnCount = 10
+const brickPadding = 2
 const brickOffsetTop = 30
-const brickOffsetLeft = 30
+const brickOffsetLeft = 2
+const brickWidth =
+  (canvas.width - brickOffsetLeft * 2 - brickColumnCount * brickPadding) /
+  brickColumnCount
+const brickHeight = 20
 
 let bricks = []
 for (c = 0; c < brickColumnCount; c++) {
   bricks[c] = []
   for (r = 0; r < brickRowCount; r++) {
-    bricks[c][r] = { x: 0, y: 0, status: 1 }
+    bricks[c][r] = { x: 0, y: 0, status: 1, color: retroColors[r] }
   }
 }
 
 function drawBall() {
   ctx.beginPath()
   ctx.arc(x, y, ballRadius, 0, Math.PI * 2)
-  ctx.fillStyle = `#${ballColor}`
+  ctx.fillStyle = ballColor
   ctx.fill()
   ctx.closePath()
 }
@@ -105,7 +123,7 @@ function drawBricks() {
         bricks[c][r].y = brickY
         ctx.beginPath()
         ctx.rect(brickX, brickY, brickWidth, brickHeight)
-        ctx.fillStyle = '#0095DD'
+        ctx.fillStyle = bricks[c][r].color
         ctx.fill()
         ctx.closePath()
       }
@@ -116,16 +134,31 @@ function drawBricks() {
 function collisionDetection() {
   for (c = 0; c < brickColumnCount; c++) {
     for (r = 0; r < brickRowCount; r++) {
-      const b = bricks[c][r]
-      if (b.status == 1) {
+      const brick = bricks[c][r]
+      if (brick.status == 1) {
         if (
-          x > b.x - ballRadius &&
-          x < b.x + brickWidth + ballRadius &&
-          y > b.y - ballRadius &&
-          y < b.y + brickHeight + ballRadius
+          x > brick.x - ballRadius &&
+          x < brick.x + brickWidth + ballRadius &&
+          y > brick.y - ballRadius &&
+          y < brick.y + brickHeight + ballRadius
         ) {
-          dy = -dy
-          b.status = 0
+          // Determinar en qué lado de la caja ocurrió la colisión
+          const collisionLeft = brick.x
+          const collisionRight = brick.x + brickWidth
+          const collisionUp = brick.y - ballRadius
+          const collisionDown = brick.y + brickHeight
+          let collision = null
+          if (collisionLeft <= x <= collisionRight && y > collisionDown)
+            collision = 'down'
+          if (collisionLeft <= x <= collisionRight && y < collisionUp)
+            collision = 'up'
+          if (collisionUp <= y <= collisionDown && x < collisionLeft)
+            collision = 'left'
+          if (collisionUp <= y <= collisionDown && x > collisionRight)
+            collision = 'right'
+          if (['down', 'up'].includes(collision)) dy = -dy
+          if (['left', 'right'].includes(collision)) dx = -dx
+          brick.status = 0
           score++
           if (score == brickRowCount * brickColumnCount) {
             alert('You win, CONGRATULATIONS!')
@@ -146,23 +179,24 @@ function draw() {
   }
   if (y + dy < ballRadius) {
     dy = -dy
+  } else if (y + dy > canvas.height - ballRadius) {
+    lives--
+    if (!lives) {
+      alert('GAME OVER')
+      document.location.reload()
+    } else {
+      x = canvas.width / 2
+      y = canvas.height - 30
+      dx = initdx
+      dy = initdy
+      paddleX = (canvas.width - paddleWidth) / 2
+    }
   } else if (y + dy > canvas.height - ballRadius - paddleHeight) {
     if (x > paddleX && x < paddleX + paddleWidth) {
       dy = -dy * 1.1
-    } else {
-      lives--
-      if (!lives) {
-        alert('GAME OVER')
-        document.location.reload()
-      } else {
-        x = canvas.width / 2
-        y = canvas.height - 30
-        dx = 2
-        dy = -2
-        paddleX = (canvas.width - paddleWidth) / 2
-      }
     }
   }
+
   x += dx
   y += dy
 
